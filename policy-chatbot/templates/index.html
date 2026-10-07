@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ org_name }} policy assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F2F4F1;
+    --surface: #FFFFFF;
+    --ink: #1D2B2A;
+    --muted: #5C6B68;
+    --rule: #D3DAD5;
+    --binder: #28507A;
+    --binder-deep: #1E3D5F;
+    --manila: #EADFC0;
+    --manila-edge: #CDBF93;
+    --manila-ink: #54461B;
+    --error: #9B2C2C;
+    --font: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 16px/1.55 var(--font);
+  }
+  :focus-visible { outline: 2px solid var(--binder); outline-offset: 2px; }
+  .wrap { width: min(46rem, 100% - 2rem); margin-inline: auto; }
+
+  /* header */
+  header { border-bottom: 1px solid var(--rule); background: var(--surface); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; padding-block: .85rem; }
+  header h1 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+  header p { margin: 0; font-size: .85rem; color: var(--muted); }
+  .ghost {
+    font: 500 .875rem var(--font);
+    color: var(--binder);
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: .4rem .8rem;
+    cursor: pointer;
+    transition: border-color .15s, background-color .15s;
+  }
+  .ghost:hover { border-color: var(--binder); background: #EAF0F6; }
+
+  /* conversation */
+  #log { flex: 1; overflow-y: auto; padding-block: 1rem; }
+  #col { display: flex; flex-direction: column; gap: 1.25rem; }
+  .msg { max-width: 100%; }
+  .msg.user {
+    align-self: flex-end;
+    max-width: 85%;
+    background: var(--binder);
+    color: #fff;
+    padding: .6rem .9rem;
+    border-radius: 14px 14px 4px 14px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .msg.bot .body { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.bot.pending .body { color: var(--muted); }
+  .msg.bot.error .body { color: var(--error); }
+
+  /* sources look like folder tabs */
+  .tabs { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .7rem; }
+  .tab {
+    font-size: .8rem;
+    color: var(--manila-ink);
+    background: var(--manila);
+    border-bottom: 2px solid var(--manila-edge);
+    border-radius: 6px 6px 0 0;
+    padding: .15rem .65rem;
+  }
+
+  /* empty state */
+  .empty { padding-top: 2.5rem; }
+  .empty h2 { margin: 0 0 .35rem; font-size: 1.5rem; font-weight: 600; line-height: 1.25; }
+  .empty p { margin: 0 0 1.25rem; color: var(--muted); max-width: 34rem; }
+  .starters { display: grid; gap: .5rem; max-width: 30rem; }
+  .starters button {
+    font: 400 .95rem var(--font);
+    text-align: left;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: .65rem .85rem;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .starters button:hover { border-color: var(--binder); }
+
+  /* composer */
+  footer { border-top: 1px solid var(--rule); background: var(--surface); padding-block: .75rem .9rem; }
+  form { display: flex; gap: .5rem; align-items: flex-end; }
+  textarea {
+    flex: 1;
+    resize: none;
+    font: 400 1rem/1.45 var(--font);
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: .6rem .8rem;
+    max-height: 9rem;
+  }
+  textarea:focus-visible { outline-offset: 0; border-color: var(--binder); }
+  button.send {
+    font: 600 .95rem var(--font);
+    color: #fff;
+    background: var(--binder);
+    border: 0;
+    border-radius: 10px;
+    padding: .65rem 1.1rem;
+    cursor: pointer;
+    transition: background-color .15s;
+  }
+  button.send:hover { background: var(--binder-deep); }
+  button.send:disabled { background: #8EA2B8; cursor: default; }
+  .note { margin: .5rem 0 0; font-size: .78rem; color: var(--muted); }
+
+  @media (max-width: 480px) {
+    .empty h2 { font-size: 1.25rem; }
+    header p { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div>
+      <h1>{{ org_name }}</h1>
+      <p>Policy assistant</p>
+    </div>
+    <button type="button" class="ghost" id="reset">New chat</button>
+  </div>
+</header>
+
+<main id="log">
+  <div class="wrap">
+    <div id="col" role="log" aria-live="polite"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <form id="form" autocomplete="off">
+      <textarea id="input" rows="1" maxlength="1000" aria-label="Your question"
+        placeholder="Ask about leave, assets, benefits..."></textarea>
+      <button type="submit" class="send" id="send">Send</button>
+    </form>
+    <p class="note">Answers come from the documents your company has uploaded. For anything important, confirm with HR.</p>
+  </div>
+</footer>
+
+<template id="empty-tpl">
+  <section class="empty" id="empty">
+    <h2>Ask about company policies</h2>
+    <p>Leave, asset requests, reimbursements and other everyday processes. Answers come with the document they were found in.</p>
+    <div class="starters">
+      <button type="button" data-q="How many leave days do I get in a year?">How many leave days do I get in a year?</button>
+      <button type="button" data-q="How do I request a new laptop or other asset?">How do I request a new laptop or other asset?</button>
+      <button type="button" data-q="What is the work from home policy?">What is the work from home policy?</button>
+    </div>
+  </section>
+</template>
+
+<script>
+  const log = document.getElementById('log');
+  const col = document.getElementById('col');
+  const form = document.getElementById('form');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('send');
+  let busy = false;
+
+  function node(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function showEmpty() {
+    col.replaceChildren(document.getElementById('empty-tpl').content.cloneNode(true));
+  }
+
+  function toBottom() { log.scrollTop = log.scrollHeight; }
+
+  function resize() {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 144) + 'px';
+  }
+
+  function addUser(text) {
+    const empty = document.getElementById('empty');
+    if (empty) empty.remove();
+    col.appendChild(node('div', 'msg user', text));
+    toBottom();
+  }
+
+  function addBot(text, sources, kind) {
+    const wrap = node('div', 'msg bot' + (kind ? ' ' + kind : ''));
+    wrap.appendChild(node('div', 'body', text));
+    if (sources && sources.length) {
+      const tabs = node('div', 'tabs');
+      tabs.setAttribute('aria-label', 'Sources');
+      sources.forEach(s => {
+        tabs.appendChild(node('span', 'tab', s.location ? s.source + ', ' + s.location : s.source));
+      });
+      wrap.appendChild(tabs);
+    }
+    col.appendChild(wrap);
+    toBottom();
+    return wrap;
+  }
+
+  async function ask(text) {
+    text = text.trim();
+    if (!text || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    addUser(text);
+    input.value = '';
+    resize();
+    const pending = addBot('Searching the policies...', null, 'pending');
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json().catch(() => ({}));
+      pending.remove();
+      if (res.ok) addBot(data.answer, data.sources);
+      else addBot(data.error || 'Something went wrong. Try again.', null, 'error');
+    } catch (err) {
+      pending.remove();
+      addBot('Could not reach the server. Check that the app is still running.', null, 'error');
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  form.addEventListener('submit', e => { e.preventDefault(); ask(input.value); });
+
+  input.addEventListener('input', resize);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      ask(input.value);
+    }
+  });
+
+  col.addEventListener('click', e => {
+    const btn = e.target.closest('[data-q]');
+    if (btn) ask(btn.dataset.q);
+  });
+
+  document.getElementById('reset').addEventListener('click', async () => {
+    if (busy) return;
+    await fetch('/api/reset', { method: 'POST' }).catch(() => {});
+    showEmpty();
+    input.focus();
+  });
+
+  showEmpty();
+  input.focus();
+</script>
+</body>
+</html>
