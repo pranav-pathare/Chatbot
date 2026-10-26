@@ -1,0 +1,18 @@
+{
+  "name": "policy-chatbot-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "mongoose": "^8.7.0"
+  },
+  "engines": {
+    "node": ">=21.7"
+  }
+}
